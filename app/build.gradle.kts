@@ -15,7 +15,7 @@ android {
     defaultConfig {
         applicationId = "com.flx_apps.digitaldetox"
         minSdk = 26
-        targetSdk = 33
+        targetSdk = 35
         versionCode = 20600
         versionName = "2.6.0"
 
@@ -33,6 +33,28 @@ android {
             )
         }
     }
+
+    // Distribution flavors (see PREMIUM_TIER_PLAN.md §3/§8.5): `foss` is the complete app that
+    // GitHub/F-Droid ship; `googlePlay` swaps the premium/review seams for Play Billing and
+    // in-app review. The Google-specific sources and dependencies live in a gitignored private
+    // overlay (`googlePlay.gradle.kts` + `src/googlePlay/`), so public clones build `foss` only.
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("foss") {
+            dimension = "distribution"
+            isDefault = true
+        }
+        create("googlePlay") {
+            dimension = "distribution"
+        }
+    }
+    // Generates locales_config.xml from the res/values-* folders and wires it into the manifest,
+    // so Android 13+ offers DetoxDroid in the system per-app language picker. New translations are
+    // picked up automatically — the default locale is declared in res/resources.properties.
+    androidResources {
+        generateLocaleConfig = true
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -84,7 +106,7 @@ android {
 //   ./gradlew :app:generateScreenshots
 //
 afterEvaluate {
-    val baseTest = tasks.findByName("testDebugUnitTest") as? Test ?: return@afterEvaluate
+    val baseTest = tasks.findByName("testFossDebugUnitTest") as? Test ?: return@afterEvaluate
 
     tasks.register<Test>("generateScreenshots") {
         description = "Generates the Play Store / F-Droid phone screenshots (record mode)."
@@ -184,4 +206,11 @@ dependencies {
 
 kotlin.sourceSets.all {
     languageSettings.enableLanguageFeature("DataObjects")
+}
+
+// Private Google Play overlay (gitignored — see PREMIUM_TIER_PLAN.md §8.5). Adds the Play Billing /
+// in-app review dependencies and the upload signing config. Absent in public clones, where only the
+// `foss` flavor is buildable — which is exactly the point.
+if (file("googlePlay.gradle").exists()) {
+    apply(from = "googlePlay.gradle")
 }

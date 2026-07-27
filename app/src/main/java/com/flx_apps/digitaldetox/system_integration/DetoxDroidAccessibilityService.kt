@@ -6,10 +6,12 @@ import android.app.Notification
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.ServiceInfo
 import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
 import android.view.inputmethod.InputMethodManager
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import com.flx_apps.digitaldetox.DetoxDroidApplication
 import com.flx_apps.digitaldetox.R
 import com.flx_apps.digitaldetox.data.repository.UsageStatsRepository
@@ -101,6 +103,14 @@ open class DetoxDroidAccessibilityService : AccessibilityService() {
     }
 
     private var lastPackage = ""
+
+    /**
+     * The package that window events last reported as foreground ("" before the first event).
+     * Features can re-evaluate against it when they (re)start without a fresh window event —
+     * e.g. resuming from a pause while the user is still inside an affected app, where no new
+     * window event will arrive until the next app switch.
+     */
+    val currentForegroundPackage: String get() = lastPackage
 
     /**
      * Class-name prefixes of transient system surfaces (keyboard, volume dialog, recents) whose
@@ -391,7 +401,7 @@ open class DetoxDroidAccessibilityService : AccessibilityService() {
         val isPausing = PauseButtonFeature.isPausing()
         val notification: Notification =
             NotificationCompat.Builder(this, DetoxDroidApplication.SERVICE_CHANNEL_ID)
-                .setContentTitle(getString(R.string.app_name_)).setContentText(
+                .setContentTitle(getString(R.string.app_displayName)).setContentText(
                     if (isPausing) {
                         // show the actual end of the pause instead of a bare "Paused"
                         getString(
@@ -417,8 +427,11 @@ open class DetoxDroidAccessibilityService : AccessibilityService() {
                 ).build()
 
         try {
-            // ID 101 is just an arbitrary constant integration ID
-            startForeground(101, notification)
+            // ID 101 is just an arbitrary constant integration ID; the specialUse type matches the
+            // manifest declaration (required on targetSdk >= 34, ignored on older devices)
+            ServiceCompat.startForeground(
+                this, 101, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
             Timber.i("Service moved to foreground")
         } catch (e: Exception) {
             Timber.e(e, "Failed to start foreground service")

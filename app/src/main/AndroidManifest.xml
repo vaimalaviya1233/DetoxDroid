@@ -48,6 +48,9 @@
 
     <!-- FOREGROUND_SERVICE and POST_NOTIFICATIONS permissions to prevent the app from being killed by the system -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- FOREGROUND_SERVICE_SPECIAL_USE is required on targetSdk >= 34 for the accessibility
+         service's ongoing status notification (foregroundServiceType="specialUse" below) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
@@ -56,7 +59,7 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app.name_"
+        android:label="@string/app_displayName"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.DetoxDroid"
@@ -64,7 +67,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app.name_"
+            android:label="@string/app_displayName"
             android:theme="@style/Theme.DetoxDroid">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -83,7 +86,7 @@
             android:name=".widgets.minimal_launcher.MinimalLauncherWidgetConfigureActivity"
             android:excludeFromRecents="true"
             android:exported="true"
-            android:label="@string/widget.minimalLauncher.configure.title"
+            android:label="@string/widget_minimalLauncher_configure_title"
             android:theme="@style/Theme.DetoxDroid">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
@@ -92,9 +95,10 @@
 
         <service
             android:name=".system_integration.DetoxDroidAccessibilityService"
-            android:description="@string/app.accessibilityService.description"
+            android:description="@string/app_accessibilityService_description"
             android:exported="false"
-            android:label="@string/app.accessibilityService.name"
+            android:foregroundServiceType="specialUse"
+            android:label="@string/app_accessibilityService_name"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
@@ -103,6 +107,13 @@
             <meta-data
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
+            <!-- Required alongside foregroundServiceType="specialUse" (targetSdk >= 34): explains
+                 why no dedicated FGS type fits. The service is the system-bound accessibility
+                 service; its foreground notification only surfaces DetoxDroid's active/paused
+                 state with a pause action. -->
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Ongoing digital-wellbeing status notification (active/paused state with a pause action) for the user's own self-control rules; all processing stays on the device." />
         </service>
         <service android:name=".ui.screens.feature.break_doom_scrolling.BreakDoomScrollingOverlayService" />
         <service android:name=".ui.screens.feature.disable_apps.AppDisabledOverlayService" />
@@ -125,7 +136,7 @@
         <receiver
             android:name=".widgets.minimal_launcher.MinimalLauncherWidgetProvider"
             android:exported="false"
-            android:label="@string/widget.minimalLauncher.name">
+            android:label="@string/widget_minimalLauncher_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -141,7 +152,7 @@
         <service
             android:name="android.service.voice.VoiceInteractionService"
             android:exported="false"
-            android:label="@string/app.name_"
+            android:label="@string/app_displayName"
             android:permission="android.permission.BIND_VOICE_INTERACTION"
             android:process=":interactor">
             <meta-data
@@ -158,7 +169,7 @@
             android:name=".system_integration.PauseTileService"
             android:exported="true"
             android:icon="@drawable/ic_launcher_foreground_outlined"
-            android:label="@string/app.quickSettingsTile"
+            android:label="@string/app_quickSettingsTile"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <meta-data
                 android:name="android.service.quicksettings.TOGGLEABLE_TILE"

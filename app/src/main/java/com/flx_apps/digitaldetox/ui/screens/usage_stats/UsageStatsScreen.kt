@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.activity.compose.LocalActivity
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.FilterList
@@ -48,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import com.flx_apps.digitaldetox.R
 import com.flx_apps.digitaldetox.premium.PremiumManager
 import com.flx_apps.digitaldetox.premium.PremiumSheetController
+import com.flx_apps.digitaldetox.review.AppReviewController
 import com.flx_apps.digitaldetox.ui.screens.nav_host.NavViewModel
 import com.flx_apps.digitaldetox.util.NavigationUtil
 import dev.olshevski.navigation.reimagined.hilt.hiltViewModel
@@ -57,9 +59,9 @@ import java.time.format.FormatStyle
 private const val TOP_APPS_PREVIEW_COUNT = 10
 
 private enum class TopAppsSort(val labelRes: Int) {
-    SCREEN_TIME(R.string.usage_stats_sort_screen_time),
-    OPENS(R.string.usage_stats_sort_opens),
-    SCROLL_INTENSITY(R.string.usage_stats_sort_scroll_intensity)
+    SCREEN_TIME(R.string.usageStats_sort_screenTime),
+    OPENS(R.string.usageStats_sort_opens),
+    SCROLL_INTENSITY(R.string.usageStats_sort_scrollIntensity)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -84,6 +86,15 @@ fun UsageStatsScreen(
 
     LaunchedEffect(Unit) { viewModel.refresh(force = true) }
 
+    // Looking at a week+ of usage stats is the moment the app's value is most visible — a good,
+    // frequency-capped time to ask for a store review (no-op in the FOSS build).
+    val activity = LocalActivity.current
+    LaunchedEffect(state.availableHistoryDays) {
+        if (state.availableHistoryDays >= 7 && activity != null) {
+            AppReviewController.maybeAskForReview(activity)
+        }
+    }
+
     val context = LocalContext.current
     val pm = context.packageManager
 
@@ -101,7 +112,7 @@ fun UsageStatsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.usage_stats_title)) },
+                title = { Text(stringResource(R.string.usageStats_title)) },
                 navigationIcon = {
                     IconButton(onClick = { navViewModel.onBackPress() }) {
                         Icon(
@@ -164,7 +175,7 @@ fun UsageStatsScreen(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    stringResource(R.string.usage_stats_improves_over_time),
+                                    stringResource(R.string.usageStats_improvesOverTime),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -188,12 +199,12 @@ fun UsageStatsScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            SectionLabel(stringResource(R.string.usage_stats_top_apps))
+                            SectionLabel(stringResource(R.string.usageStats_topApps))
                             Box {
                                 IconButton(onClick = { sortExpanded = true }) {
                                     Icon(
                                         Icons.Default.FilterList,
-                                        contentDescription = stringResource(R.string.usage_stats_sort),
+                                        contentDescription = stringResource(R.string.usageStats_sort),
                                         modifier = Modifier.size(18.dp),
                                         tint = MaterialTheme.colorScheme.primary
                                     )
@@ -238,8 +249,8 @@ fun UsageStatsScreen(
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text(
-                                        if (expanded) stringResource(R.string.usage_stats_show_less)
-                                        else stringResource(R.string.usage_stats_show_more)
+                                        if (expanded) stringResource(R.string.usageStats_showLess)
+                                        else stringResource(R.string.usageStats_showMore)
                                     )
                                 }
                             }
@@ -256,7 +267,7 @@ fun UsageStatsScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                stringResource(R.string.usage_stats_no_data),
+                                stringResource(R.string.usageStats_noData),
                                 style = MaterialTheme.typography.bodyLarge
                             )
                             Spacer(modifier = Modifier.height(8.dp))
